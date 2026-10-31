@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DO Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+        header h1 {
+            color: #00ff88;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        header p {
+            color: #bbb;
+            font-size: 16px;
+        }
+        .search-container {
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+        }
+        .search-container input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 2px solid #333;
+            background-color: #1e1e1e;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
+        .search-container input:focus {
+            border-color: #00ff88;
+        }
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background-color: #1e1e1e;
+            color: #bbb;
+            border: 1px solid #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background-color: #00ff88;
+            color: #121212;
+            font-weight: bold;
+            border-color: #00ff88;
+        }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .game-card {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333;
+            transition: 0.3s;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff88;
+        }
+        .game-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background-color: #2b2b2b;
+        }
+        .game-info {
+            padding: 15px;
+        }
+        .game-info h3 {
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        .game-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .likes-count {
+            color: #ff4757;
+            cursor: pointer;
+            font-size: 16px;
+            user-select: none;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            flex: 1;
+            text-align: center;
+            background-color: #00ff88;
+            color: #121212;
+            padding: 8px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn:hover {
+            background-color: #00cc6a;
+        }
+        .btn-download {
+            background-color: #3742fa;
+            color: #fff;
+        }
+        .btn-download:hover {
+            background-color: #2f3542;
+        }
+        .no-games {
+            text-align: center;
+            color: #777;
+            grid-column: 1 / -1;
+            margin-top: 40px;
+            font-size: 16px;
+        }
+        #gameModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #gameModal iframe {
+            width: 90%;
+            height: 80%;
+            background: #fff;
+            border-radius: 8px;
+            border: none;
+            max-width: 800px;
+        }
+        .close-modal {
+            margin-top: 15px;
+            background-color: #ff4757;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>DO Game</h1>
+        <p>العب وحمل افضل العاب DO</p>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="ابحث عن لعبة..." onkeyup="filterGames()">
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('latest')">🔥 أحدث الألعاب</button>
+        <button class="tab-btn" onclick="switchTab('popular')">⭐ أشهر الألعاب</button>
+        <button class="tab-btn" onclick="switchTab('favorites')">❤️ ألعاب أعجبتني</button>
+    </div>
+
+    <div class="games-grid" id="gamesContainer"></div>
+
+    <div id="gameModal">
+        <iframe id="gameFrame"></iframe>
+        <button class="close-modal" onclick="closeGameModal()">إغلاق اللعبة</button>
+    </div>
+
+    <script>
+        let currentTab = 'latest';
+
+        window.onload = function() { renderGames(); };
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            let buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGames();
+        }
+
+        function renderGames() {
+            let games = JSON.parse(localStorage.getItem('myGames')) || [];
+            let favorites = JSON.parse(localStorage.getItem('myFavorites')) || [];
+            let container = document.getElementById('gamesContainer');
+            container.innerHTML = "";
+
+            let displayGames = [...games];
+
+            if (currentTab === 'latest') {
+                displayGames.reverse();
+            } else if (currentTab === 'popular') {
+                displayGames.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            } else if (currentTab === 'favorites') {
+                displayGames = games.filter(game => favorites.includes(game.name));
+            }
+
+            if (displayGames.length === 0) {
+                container.innerHTML = `<div class="no-games">لا توجد ألعاب هنا حالياً.</div>`;
+                return;
+            }
+
+            displayGames.forEach((game) => {
+                let originalIndex = games.findIndex(g => g.name === game.name);
+                let isFav = favorites.includes(game.name);
+
+                container.innerHTML += `
+                    <div class="game-card" data-name="${game.name}">
+                        <img src="${game.image}" alt="${game.name}" class="game-img">
+                        <div class="game-info">
+                            <h3>${game.name}</h3>
+                            <div class="game-details">
+                                <span>${game.desc}</span>
+                                <span class="likes-count" onclick="toggleLike(${originalIndex})">
+                                    ${isFav ? '❤️' : '🤍'} ${game.likes || 0}
+                                </span>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn" onclick='playGame(${originalIndex})'>العب الآن</button>
+                                <button class="btn btn-download" onclick='downloadGameCode(${originalIndex})'>تحميل</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function playGame(index) {
+            let games = JSON.parse(localStorage.getItem('myGames')) || [];
+            let game = games[index];
+            let modal = document.getElementById('gameModal');
+            let frame = document.getElementById('gameFrame');
+
+            modal.style.display = 'flex';
+            let doc = frame.contentWindow.document;
+            doc.open();
+            doc.write(game.gameCode);
+            doc.close();
+        }
+
+        function closeGameModal() {
+            let modal = document.getElementById('gameModal');
+            let frame = document.getElementById('gameFrame');
+            modal.style.display = 'none';
+            frame.src = "";
+        }
+
+        function downloadGameCode(index) {
+            let games = JSON.parse(localStorage.getItem('myGames')) || [];
+            let game = games[index];
+            let newWindow = window.open();
+            newWindow.document.write(game.gameCode);
+            newWindow.document.close();
+        }
+
+        function toggleLike(index) {
+            let games = JSON.parse(localStorage.getItem('myGames')) || [];
+            let favorites = JSON.parse(localStorage.getItem('myFavorites')) || [];
+            let gameName = games[index].name;
+            let favIndex = favorites.indexOf(gameName);
+
+            if (favIndex > -1) {
+                favorites.splice(favIndex, 1);
+                games[index].likes = Math.max(0, (games[index].likes || 0) - 1);
+            } else {
+                favorites.push(gameName);
+                games[index].likes = (games[index].likes || 0) + 1;
+            }
+
+            localStorage.setItem('myGames', JSON.stringify(games));
+            localStorage.setItem('myFavorites', JSON.stringify(favorites));
+            renderGames();
+        }
+
+        function filterGames() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let cards = document.getElementsByClassName('game-card');
+
+            for (let i = 0; i < cards.length; i++) {
+                let name = cards[i].getAttribute('data-name').toLowerCase();
+                if (name.includes(input)) {
+                    cards[i].style.display = "block";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

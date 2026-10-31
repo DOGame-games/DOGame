@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - إدارة الألعاب</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #00ff88;
+            margin-bottom: 20px;
+        }
+        .form-container {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+            margin: 0 auto 30px auto;
+            border: 1px solid #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ddd;
+            font-size: 14px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: #2b2b2b;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-group textarea {
+            resize: vertical;
+            height: 120px;
+            font-family: monospace;
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-btn {
+            display: block;
+            background-color: #2b2b2b;
+            color: #00ff88;
+            border: 1px dashed #00ff88;
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .btn-submit {
+            width: 100%;
+            background-color: #00ff88;
+            color: #121212;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #00cc6a;
+        }
+        .admin-games-list {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .admin-game-item {
+            background-color: #1e1e1e;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #333;
+        }
+        .admin-game-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .admin-game-thumb {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            background-color: #333;
+        }
+        .btn-delete {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: #00ff88;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>لوحة التحكم - إدارة الألعاب</h1>
+
+    <div class="form-container">
+        <div class="form-group">
+            <label>اسم اللعبة</label>
+            <input type="text" id="gameName" placeholder="مثال: مغامرات الفضاء">
+        </div>
+
+        <div class="form-group">
+            <label>وصف قصير</label>
+            <input type="text" id="gameDesc" placeholder="مثال: لعبة اكشن خفيفة">
+        </div>
+
+        <div class="form-group">
+            <label>صورة اللعبة (من المعرض)</label>
+            <div class="file-input-wrapper">
+                <div class="file-btn" id="imageLabel">📁 اختر صورة اللعبة</div>
+                <input type="file" id="gameImageFile" accept="image/*" onchange="handleImage(this)">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>كود اللعبة البرمجي (HTML/JS)</label>
+            <textarea id="gameCode" placeholder="الصق كود الـ HTML والـ JS هنا..."></textarea>
+        </div>
+
+        <button class="btn-submit" onclick="addGame()">🚀 نشر اللعبة الجديدة</button>
+    </div>
+
+    <div class="admin-games-list">
+        <h2>الألعاب الحالية (إدارة)</h2>
+        <div id="adminGamesContainer"></div>
+    </div>
+
+    <a href="index.html" class="back-link">← العودة للموقع الرئيسي</a>
+
+    <script>
+        let selectedImageBase64 = "";
+
+        function handleImage(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('imageLabel').innerText = "✅ " + input.files[0].name;
+                let reader = new FileReader();
+                reader.onload = (e) => selectedImageBase64 = e.target.result;
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        window.onload = function() { loadAdminGames(); };
+
+        function addGame() {
+            let name = document.getElementById('gameName').value.trim();
+            let desc = document.getElementById('gameDesc').value.trim();
+            let code = document.getElementById('gameCode').value;
+
+            if (!name) {
+                alert("الرجاء إدخال اسم اللعبة!");
+                return;
+            }
+
+            let games = JSON.parse(localStorage.getItem('myGames')) || [];
+
+            let newGame = {
+                name: name,
+                desc: desc || "ألعاب DO المميزة",
+                image: selectedImageBase64 || 'https://via.placeholder.com/300x150?text=DO+Game',
+                gameCode: code || '<h1>لا يوجد كود</h1>',
+                likes: 0
+            };
+
+            games.push(newGame);
+            localStorage.setItem('myGames', JSON.stringify(games));
+
+            alert("تم نشر اللعبة بنجاح!");
+            location.reload();
+        }
+
+        function loadAdminGames() {
+            let games = JSON.parse(localStorage.getItem('myGames')) || [];
+            let container = document.getElementById('adminGamesContainer');
+            container.innerHTML = "";
+
+            if (games.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #777;">لا توجد ألعاب مضافة.</div>`;
+                return;
+            }
+
+            games.forEach((game, index) => {
+                container.innerHTML += `
+                    <div class="admin-game-item">
+                        <div class="admin-game-info">
+                            <img src="${game.image}" class="admin-game-thumb" alt="game">
+                            <div>
+                                <h4 style="font-size: 16px; margin-bottom: 3px;">${game.name}</h4>
+                                <span style="font-size: 12px; color: #aaa;">❤️ ${game.likes || 0}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" onclick="deleteGame(${index})">حذف</button>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteGame(index) {
+            if (confirm("هل أنت متأكد من الحذف؟")) {
+                let games = JSON.parse(localStorage.getItem('myGames')) || [];
+                games.splice(index, 1);
+                localStorage.setItem('myGames', JSON.stringify(games));
+                loadAdminGames();
+            }
+        }
+    </script>
+</body>
+</html>
